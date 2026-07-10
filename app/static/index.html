@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Interview Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0E1116;
+    --panel: #151A21;
+    --line: #232A35;
+    --paper: #E9ECF1;
+    --dim: #8A93A3;
+    --signal: #5EEAD4;
+    --signal-dim: #2A5F58;
+    --amber: #F2B84B;
+    --amber-dim: #5C4A28;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .console {
+    width: 100%;
+    max-width: 620px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+
+  .wordmark {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.12em;
+    color: var(--paper);
+  }
+
+  .wordmark span { color: var(--signal); }
+
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- Setup screen ---------- */
+  .setup-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .setup-sub {
+    color: var(--dim);
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .field { margin-bottom: 24px; }
+
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+
+  .field input[type="text"] {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    color: var(--paper);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input[type="text"]:focus {
+    border-color: var(--signal);
+  }
+
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .chip:hover { border-color: var(--dim); color: var(--paper); }
+
+  .chip.selected {
+    border-color: var(--signal);
+    color: var(--signal);
+    background: rgba(94, 234, 212, 0.08);
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--signal);
+    color: #062824;
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .btn-secondary:hover { border-color: var(--dim); }
+
+  /* ---------- Interview screen ---------- */
+  .q-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .q-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--signal);
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+
+  /* signature waveform / EQ element */
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 28px;
+    margin-bottom: 18px;
+  }
+
+  .bar {
+    width: 4px;
+    background: var(--signal-dim);
+    border-radius: 2px;
+    height: 20%;
+    transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s;
+  }
+
+  .waveform.listening .bar {
+    animation: pulse 1.1s ease-in-out infinite;
+    background: var(--signal);
+  }
+
+  .bar:nth-child(1) { animation-delay: 0.0s; }
+  .bar:nth-child(2) { animation-delay: 0.1s; }
+  .bar:nth-child(3) { animation-delay: 0.2s; }
+  .bar:nth-child(4) { animation-delay: 0.3s; }
+  .bar:nth-child(5) { animation-delay: 0.15s; }
+  .bar:nth-child(6) { animation-delay: 0.25s; }
+  .bar:nth-child(7) { animation-delay: 0.05s; }
+  .bar:nth-child(8) { animation-delay: 0.35s; }
+  .bar:nth-child(9) { animation-delay: 0.2s; }
+  .bar:nth-child(10) { animation-delay: 0.1s; }
+  .bar:nth-child(11) { animation-delay: 0.3s; }
+  .bar:nth-child(12) { animation-delay: 0.0s; }
+
+  @keyframes pulse {
+    0%, 100% { height: 20%; }
+    50% { height: 90%; }
+  }
+
+  .q-text {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--paper);
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    color: var(--paper);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    min-height: 130px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus { border-color: var(--signal); }
+
+  .submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+
+  .btn-submit {
+    background: var(--signal);
+    color: #062824;
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-submit:hover { opacity: 0.9; }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .feedback-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 16px;
+    animation: slide-in 0.35s ease;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .feedback-score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .feedback-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .feedback-score.strong { color: var(--signal); }
+  .feedback-score.weak { color: var(--amber); }
+
+  .feedback-score-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .feedback-text {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.55;
+  }
+
+  /* ---------- Report screen ---------- */
+  .report-header {
+    margin-bottom: 28px;
+  }
+
+  .report-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .report-summary {
+    color: var(--dim);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 999px;
+  }
+
+  .tag.strength {
+    background: rgba(94, 234, 212, 0.08);
+    color: var(--signal);
+    border: 1px solid var(--signal-dim);
+  }
+
+  .tag.weak {
+    background: rgba(242, 184, 75, 0.08);
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+  }
+
+  .plan-list { list-style: none; }
+
+  .plan-list li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .plan-list li:last-child { border-bottom: none; }
+
+  .plan-num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--signal);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .report-actions { margin-top: 32px; }
+
+  /* ---------- Loading / error ---------- */
+  .status-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 14px;
+    display: none;
+  }
+
+  .status-line.visible { display: block; }
+  .status-line.error { color: var(--amber); }
+
+  .dot-pulse {
+    display: inline-block;
+    animation: blink 1.2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="console">
+  <div class="topbar">
+    <div class="wordmark">NEXUS<span>_</span></div>
+    <div class="topbar-meta" id="topbarMeta">interview console</div>
+  </div>
+
+  <!-- AUTH SCREEN -->
+  <div class="screen active" id="screen-auth">
+    <div class="setup-title">Sign in</div>
+    <div class="setup-sub">Your interviews and history are tied to your account.</div>
+
+    <button class="btn-primary" id="googleBtn" style="margin-bottom:16px;">Sign in with Google</button>
+
+    <div class="field">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••">
+    </div>
+
+    <button class="btn-primary" id="loginBtn">Log in</button>
+    <button class="btn-secondary" id="registerBtn">Create account</button>
+    <div class="status-line" id="authStatus"></div>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div class="screen" id="screen-setup">
+    <div class="setup-title">Start a mock interview</div>
+    <div class="setup-sub">NEXUS asks, scores, and tracks your weak areas — then hands you a study plan built from what actually happened.</div>
+
+    <div class="field">
+      <label for="topicInput">Topic</label>
+      <input type="text" id="topicInput" placeholder="e.g. System Design, Python DSA, Behavioral" value="System Design">
+    </div>
+
+    <div class="field">
+      <label>Difficulty</label>
+      <div class="chip-row" id="difficultyChips">
+        <div class="chip" data-value="easy">easy</div>
+        <div class="chip selected" data-value="medium">medium</div>
+        <div class="chip" data-value="hard">hard</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Questions</label>
+      <div class="chip-row" id="countChips">
+        <div class="chip" data-value="3">3</div>
+        <div class="chip selected" data-value="5">5</div>
+        <div class="chip" data-value="7">7</div>
+        <div class="chip" data-value="10">10</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="startBtn">Begin interview</button>
+    <div class="status-line" id="setupStatus"></div>
+  </div>
+
+  <!-- INTERVIEW SCREEN -->
+  <div class="screen" id="screen-interview">
+    <div class="q-card">
+      <div class="q-label" id="qLabel">Q01 / 05</div>
+      <div class="waveform listening" id="waveform">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <div class="q-text" id="qText">Loading question…</div>
+    </div>
+
+    <textarea id="answerInput" placeholder="Type your answer here…"></textarea>
+    <div class="submit-row">
+      <button class="btn-submit" id="submitBtn">Submit answer</button>
+    </div>
+    <div class="status-line" id="interviewStatus"></div>
+
+    <div class="feedback-card" id="feedbackCard" style="display:none;">
+      <div class="feedback-score-row">
+        <div class="feedback-score" id="feedbackScore">7/10</div>
+        <div class="feedback-score-label">score</div>
+      </div>
+      <div class="feedback-text" id="feedbackText"></div>
+      <div class="submit-row">
+        <button class="btn-submit" id="nextBtn">Next question →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT SCREEN -->
+  <div class="screen" id="screen-report">
+    <div class="report-header">
+      <div class="report-title">Interview complete</div>
+      <div class="report-summary" id="reportSummary"></div>
+    </div>
+
+    <div class="section-label">Strengths</div>
+    <div class="tag-row" id="strengthsRow"></div>
+
+    <div class="section-label">Weak areas</div>
+    <div class="tag-row" id="weakRow"></div>
+
+    <div class="section-label">Study plan</div>
+    <ul class="plan-list" id="planList"></ul>
+
+    <div class="report-actions">
+      <button class="btn-secondary" id="restartBtn">Start another interview</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "";  // same origin
+
+  // JWT-based session (email+password or Google OAuth). Stored in
+  // localStorage so it survives page reloads; on a Google login redirect,
+  // the token arrives in the URL fragment instead (see checkGoogleRedirect).
+  let authToken = localStorage.getItem('nexusToken') || null;
+
+  function authHeaders(extra = {}) {
+    return authToken ? { ...extra, 'Authorization': `Bearer ${authToken}` } : extra;
+  }
+
+  function setToken(token) {
+    authToken = token;
+    localStorage.setItem('nexusToken', token);
+  }
+
+  function logout() {
+    authToken = null;
+    localStorage.removeItem('nexusToken');
+    showScreen('auth');
+  }
+
+  function checkGoogleRedirect() {
+    const match = window.location.hash.match(/token=([^&]+)/);
+    if (match) {
+      setToken(decodeURIComponent(match[1]));
+      history.replaceState(null, '', window.location.pathname); // strip the fragment
+      return true;
+    }
+    return false;
+  }
+
+  let threadId = null;
+  let currentQNum = 1;
+  let totalQ = 5;
+
+  const el = (id) => document.getElementById(id);
+
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    el('screen-' + name).classList.add('active');
+  }
+
+  function setStatus(id, msg, isError) {
+    const node = el(id);
+    node.textContent = msg;
+    node.classList.toggle('visible', !!msg);
+    node.classList.toggle('error', !!isError);
+  }
+
+  // ---- chip selection ----
+  function wireChips(containerId) {
+    const container = el(containerId);
+    container.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        container.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+      });
+    });
+  }
+  wireChips('difficultyChips');
+  wireChips('countChips');
+
+  function selectedValue(containerId) {
+    return el(containerId).querySelector('.chip.selected').dataset.value;
+  }
+
+  // ---- waveform helpers ----
+  const PATTERN = [0.4, 0.7, 0.5, 0.9, 0.6, 0.8, 0.3, 0.6, 0.75, 0.5, 0.65, 0.45];
+
+  function setWaveformListening(on) {
+    el('waveform').classList.toggle('listening', on);
+    if (on) {
+      el('waveform').querySelectorAll('.bar').forEach(b => { b.style.height = ''; b.style.background = ''; });
+    }
+  }
+
+  function setWaveformScore(score) {
+    const frac = Math.max(score, 1) / 10;
+    const color = score >= 6 ? 'var(--signal)' : 'var(--amber)';
+    el('waveform').querySelectorAll('.bar').forEach((bar, i) => {
+      bar.style.height = Math.max(PATTERN[i] * frac * 100, 8) + '%';
+      bar.style.background = color;
+    });
+  }
+
+  // ---- API calls ----
+  async function startInterview() {
+    const topic = el('topicInput').value.trim();
+    if (!topic) { setStatus('setupStatus', 'Enter a topic to continue.', true); return; }
+
+    const difficulty = selectedValue('difficultyChips');
+    const max_questions = parseInt(selectedValue('countChips'), 10);
+    totalQ = max_questions;
+
+    el('startBtn').disabled = true;
+    setStatus('setupStatus', 'Starting interview…');
+
+    try {
+      const res = await fetch(API + '/start_interview', {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ topic, difficulty, max_questions })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      const data = await res.json();
+
+      threadId = data.thread_id;
+      currentQNum = data.question_number;
+
+      el('topbarMeta').textContent = topic + ' · ' + difficulty;
+      el('qLabel').textContent = 'Q' + String(currentQNum).padStart(2, '0') + ' / ' + String(totalQ).padStart(2, '0');
+      el('qText').textContent = data.question;
+      el('answerInput').value = '';
+      el('feedbackCard').style.display = 'none';
+      setWaveformListening(true);
+
+      showScreen('interview');
+      setStatus('setupStatus', '');
+    } catch (err) {
+      setStatus('setupStatus', 'Could not start interview — ' + err.message, true);
+    } finally {
+      el('startBtn').disabled = false;
+    }
+  }
+
+  async function submitAnswer() {
+    const answer = el('answerInput').value.trim();
+    if (!answer) { setStatus('interviewStatus', 'Write an answer before submitting.', true); return; }
+
+    el('submitBtn').disabled = true;
+    setStatus('interviewStatus', 'NEXUS is scoring your answer…');
+
+    try {
+      const res = await fetch(API + '/submit_answer', {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ thread_id: threadId, answer })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      const data = await res.json();
+
+      setStatus('interviewStatus', '');
+      setWaveformListening(false);
+
+      if (data.is_complete) {
+        await loadReport();
+        return;
+      }
+
+      setWaveformScore(data.last_score);
+      el('feedbackScore').textContent = data.last_score + '/10';
+      el('feedbackScore').className = 'feedback-score ' + (data.last_score >= 6 ? 'strong' : 'weak');
+      el('feedbackText').textContent = data.last_feedback;
+      el('feedbackCard').style.display = 'block';
+
+      // stash the next question, revealed on "Next question"
+      el('nextBtn').onclick = () => {
+        currentQNum = data.question_number;
+        el('qLabel').textContent = 'Q' + String(currentQNum).padStart(2, '0') + ' / ' + String(totalQ).padStart(2, '0');
+        el('qText').textContent = data.question;
+        el('answerInput').value = '';
+        el('feedbackCard').style.display = 'none';
+        setWaveformListening(true);
+      };
+    } catch (err) {
+      setStatus('interviewStatus', 'Could not submit answer — ' + err.message, true);
+    } finally {
+      el('submitBtn').disabled = false;
+    }
+  }
+
+  async function loadReport() {
+    try {
+      const res = await fetch(API + '/get_report?thread_id=' + threadId, {
+        headers: authHeaders()
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      const data = await res.json();
+
+      renderReport(data.report || '');
+      showScreen('report');
+    } catch (err) {
+      setStatus('interviewStatus', 'Interview finished, but the report failed to load — ' + err.message, true);
+    }
+  }
+
+  // ---- parse the markdown-ish report string from the backend ----
+  function renderReport(report) {
+    const section = (label) => {
+      const re = new RegExp('\\*\\*' + label + ':\\*\\*\\n([\\s\\S]*?)(?=\\n\\*\\*|$)');
+      const m = report.match(re);
+      return m ? m[1].trim() : '';
+    };
+
+    const summaryMatch = report.split('\n\n')[1] || '';
+    el('reportSummary').textContent = summaryMatch.trim();
+
+    const strengths = section('Strengths').split('\n').map(s => s.replace(/^- /, '').trim()).filter(Boolean);
+    const weak = section('Weak Areas').split('\n').map(s => s.replace(/^- /, '').trim()).filter(Boolean);
+    const plan = section('Study Plan').split('\n').map(s => s.replace(/^- /, '').trim()).filter(Boolean);
+
+    el('strengthsRow').innerHTML = strengths.map(s => `<div class="tag strength">${escapeHtml(s)}</div>`).join('') || '<div class="tag strength">none flagged</div>';
+    el('weakRow').innerHTML = weak.map(s => `<div class="tag weak">${escapeHtml(s)}</div>`).join('') || '<div class="tag weak">none flagged</div>';
+    el('planList').innerHTML = plan.map((s, i) => `<li><span class="plan-num">${String(i + 1).padStart(2, '0')}</span><span>${escapeHtml(s)}</span></li>`).join('');
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function resetToSetup() {
+    threadId = null;
+    el('topbarMeta').textContent = 'interview console';
+    showScreen('setup');
+  }
+
+  el('startBtn').addEventListener('click', startInterview);
+  el('submitBtn').addEventListener('click', submitAnswer);
+  el('restartBtn').addEventListener('click', resetToSetup);
+
+  el('answerInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) submitAnswer();
+  });
+
+  // ---- Auth wiring ----
+  el('googleBtn').addEventListener('click', () => {
+    window.location.href = API + '/auth/google/login';
+  });
+
+  el('loginBtn').addEventListener('click', () => authRequest('/auth/login'));
+  el('registerBtn').addEventListener('click', () => authRequest('/auth/register'));
+
+  async function authRequest(path) {
+    const email = el('authEmail').value.trim();
+    const password = el('authPassword').value;
+    if (!email || !password) {
+      setStatus('authStatus', 'Enter both email and password.', true);
+      return;
+    }
+    setStatus('authStatus', 'Working…', false);
+    try {
+      const res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus('authStatus', data.detail || 'Something went wrong.', true);
+        return;
+      }
+      setToken(data.access_token);
+      showScreen('setup');
+    } catch (err) {
+      setStatus('authStatus', 'Network error -- is the server running?', true);
+    }
+  }
+
+  // ---- Startup routing ----
+  (async function init() {
+    checkGoogleRedirect();
+    if (!authToken) {
+      showScreen('auth');
+      return;
+    }
+    // Validate the stored token is still good before showing the app.
+    try {
+      const res = await fetch(API + '/auth/me', { headers: authHeaders() });
+      if (!res.ok) {
+        logout();
+        return;
+      }
+      const me = await res.json();
+      el('topbarMeta').textContent = me.email;
+      showScreen('setup');
+    } catch (err) {
+      logout();
+    }
+  })();
+</script>
+
+</body>
+</html>

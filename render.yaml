@@ -1,0 +1,47 @@
+# Render Blueprint for NEXUS.
+#
+# Deliberately does NOT provision a Render-managed Postgres database here.
+# Render's free Postgres tier auto-deletes your database (users, interview
+# history, everything) 30 days after creation -- unacceptable for anything
+# with real users. Bring your own Postgres instead (see README's
+# "Deploying to Render" section for two options) and paste its connection
+# string into DATABASE_URL manually in the Render dashboard after this
+# blueprint deploys.
+
+services:
+  - type: web
+    name: nexus
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste your Neon/Supabase/paid-Postgres connection string here
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true # Render generates a random secret for you
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false # e.g. https://nexus-xxxx.onrender.com/auth/google/callback
+      - key: FRONTEND_URL
+        sync: false # same as your Render URL, e.g. https://nexus-xxxx.onrender.com
+      - key: PINECONE_INDEX_NAME
+        value: nexus-interview-kb
+      - key: PINECONE_ENVIRONMENT
+        value: us-east-1
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: EMBEDDING_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: RERANKER_MODEL
+        value: cross-encoder/ms-marco-MiniLM-L-6-v2
+      - key: GROQ_RATE_LIMIT_CALLS
+        value: "20"
+      - key: GROQ_RATE_LIMIT_PERIOD_SECONDS
+        value: "60"
