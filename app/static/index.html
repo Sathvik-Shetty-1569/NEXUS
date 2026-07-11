@@ -5,31 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXUS — Interview Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #0E1116;
-    --panel: #151A21;
-    --line: #232A35;
-    --paper: #E9ECF1;
-    --dim: #8A93A3;
-    --signal: #5EEAD4;
-    --signal-dim: #2A5F58;
-    --amber: #F2B84B;
-    --amber-dim: #5C4A28;
-    --radius: 10px;
+    /* Blueprint / examiner's-ledger palette -- deep drafting-table navy,
+       vellum-paper ink, brass stamp-gold as the single warm accent, and a
+       muted brick red for flagged/weak items (an examiner's red pen, not
+       a decorative warning color). */
+    --ink: #0E1D30;
+    --panel: #15263F;
+    --line: #2B4661;
+    --paper: #E7E9E2;
+    --dim: #7C93AC;
+    --brass: #CB9E4E;
+    --brass-dim: #4A3B20;
+    --flag: #B75C42;
+    --flag-dim: #45291F;
+    --radius: 4px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--ink);
+    background:
+      repeating-linear-gradient(0deg, rgba(203,158,78,0.028) 0px, rgba(203,158,78,0.028) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, rgba(203,158,78,0.028) 0px, rgba(203,158,78,0.028) 1px, transparent 1px, transparent 28px),
+      var(--ink);
     color: var(--paper);
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 48px 20px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -37,128 +44,161 @@
   }
 
   .mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
   }
 
   .console {
     width: 100%;
-    max-width: 620px;
+    max-width: 600px;
   }
 
-  /* ---------- Top bar ---------- */
+  /* ---------- Top bar : letterhead ---------- */
   .topbar {
+    padding-bottom: 14px;
+    margin-bottom: 32px;
+    border-bottom: 2px solid var(--line);
+    position: relative;
+  }
+
+  .topbar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -5px;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .topbar-row {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 28px;
   }
 
   .wordmark {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 15px;
-    letter-spacing: 0.12em;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.01em;
     color: var(--paper);
   }
 
-  .wordmark span { color: var(--signal); }
+  .wordmark .mark {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--brass);
+    margin-left: 5px;
+    transform: translateY(-9px) rotate(6deg);
+  }
 
   .topbar-meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
     color: var(--dim);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
   }
 
-  /* ---------- Screens ---------- */
   .screen { display: none; }
-  .screen.active { display: block; }
+  .screen.active { display: block; animation: fade-in 0.3s ease; }
 
-  /* ---------- Setup screen ---------- */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Setup / auth screens ---------- */
   .setup-title {
-    font-size: 22px;
+    font-family: 'Fraunces', serif;
     font-weight: 600;
-    margin-bottom: 6px;
+    font-size: 24px;
+    margin-bottom: 8px;
   }
 
   .setup-sub {
     color: var(--dim);
     font-size: 14px;
     margin-bottom: 32px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
-  .field { margin-bottom: 24px; }
+  .field { margin-bottom: 22px; }
 
   .field label {
     display: block;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-bottom: 10px;
+    margin-bottom: 9px;
   }
 
-  .field input[type="text"] {
+  .field input[type="text"],
+  .field input[type="email"],
+  .field input[type="password"] {
     width: 100%;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 13px 14px;
+    padding: 12px 13px;
     color: var(--paper);
     font-size: 15px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
 
-  .field input[type="text"]:focus {
-    border-color: var(--signal);
+  .field input:focus {
+    border-color: var(--brass);
+    box-shadow: 0 0 0 3px rgba(203, 158, 78, 0.12);
   }
 
-  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* bracket-style selector, reads as a punched ledger field rather than a
+     rounded chip -- selection fills solid, like a stamped choice */
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
 
   .chip {
-    background: var(--panel);
+    background: transparent;
     border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-family: 'JetBrains Mono', monospace;
+    border-radius: var(--radius);
+    padding: 9px 15px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--dim);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
     user-select: none;
   }
 
   .chip:hover { border-color: var(--dim); color: var(--paper); }
 
   .chip.selected {
-    border-color: var(--signal);
-    color: var(--signal);
-    background: rgba(94, 234, 212, 0.08);
+    border-color: var(--brass);
+    color: var(--ink);
+    background: var(--brass);
+    font-weight: 500;
   }
 
   .btn-primary {
     width: 100%;
-    background: var(--signal);
-    color: #062824;
+    background: var(--brass);
+    color: #241A08;
     border: none;
     border-radius: var(--radius);
-    padding: 15px;
+    padding: 14px;
     font-size: 15px;
     font-weight: 600;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    margin-top: 8px;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 6px;
   }
 
-  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:hover { background: #DBAE5E; }
   .btn-primary:active { transform: scale(0.99); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -168,15 +208,32 @@
     color: var(--paper);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 13px;
     font-size: 14px;
     font-weight: 500;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     cursor: pointer;
     transition: border-color 0.15s;
+    margin-top: 10px;
   }
 
-  .btn-secondary:hover { border-color: var(--dim); }
+  .btn-secondary:hover { border-color: var(--brass); color: var(--brass); }
+
+  .divider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+  }
+
+  .divider-row .line { flex: 1; height: 1px; background: var(--line); }
+  .divider-row span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
   /* ---------- Interview screen ---------- */
   .q-card {
@@ -184,37 +241,47 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .q-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--brass);
+    border-radius: var(--radius) 0 0 var(--radius);
   }
 
   .q-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    color: var(--signal);
-    letter-spacing: 0.08em;
-    margin-bottom: 14px;
+    color: var(--brass);
+    letter-spacing: 0.09em;
+    margin-bottom: 16px;
   }
 
-  /* signature waveform / EQ element */
+  /* signature "attention ticks" -- reads as a signal/rigor readout while a
+     question is live, settles once an answer is scored */
   .waveform {
     display: flex;
     align-items: center;
     gap: 3px;
-    height: 28px;
+    height: 20px;
     margin-bottom: 18px;
   }
 
   .bar {
-    width: 4px;
-    background: var(--signal-dim);
-    border-radius: 2px;
+    width: 3px;
+    background: var(--line);
     height: 20%;
     transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s;
   }
 
   .waveform.listening .bar {
-    animation: pulse 1.1s ease-in-out infinite;
-    background: var(--signal);
+    animation: tick 1.3s ease-in-out infinite;
+    background: var(--brass-dim);
   }
 
   .bar:nth-child(1) { animation-delay: 0.0s; }
@@ -230,9 +297,9 @@
   .bar:nth-child(11) { animation-delay: 0.3s; }
   .bar:nth-child(12) { animation-delay: 0.0s; }
 
-  @keyframes pulse {
+  @keyframes tick {
     0%, 100% { height: 20%; }
-    50% { height: 90%; }
+    50% { height: 65%; }
   }
 
   .q-text {
@@ -249,15 +316,18 @@
     padding: 14px;
     color: var(--paper);
     font-size: 15px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     min-height: 130px;
     resize: vertical;
     outline: none;
     line-height: 1.5;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
 
-  textarea:focus { border-color: var(--signal); }
+  textarea:focus {
+    border-color: var(--brass);
+    box-shadow: 0 0 0 3px rgba(203, 158, 78, 0.12);
+  }
 
   .submit-row {
     display: flex;
@@ -266,73 +336,88 @@
   }
 
   .btn-submit {
-    background: var(--signal);
-    color: #062824;
+    background: var(--brass);
+    color: #241A08;
     border: none;
     border-radius: var(--radius);
     padding: 12px 22px;
     font-size: 14px;
     font-weight: 600;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: background 0.15s;
   }
 
-  .btn-submit:hover { opacity: 0.9; }
+  .btn-submit:hover { background: #DBAE5E; }
   .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* ---------- Feedback: the stamp ---------- */
   .feedback-card {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 20px 24px;
+    padding: 22px 24px;
     margin-top: 16px;
-    animation: slide-in 0.35s ease;
-  }
-
-  @keyframes slide-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
   }
 
   .feedback-score-row {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 10px;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
   }
 
+  /* the signature element: a rubber-stamp seal for the score, landing
+     slightly askew like a real stamp would */
   .feedback-score {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 22px;
-    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 17px;
+    font-weight: 600;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transform: rotate(-5deg);
+    animation: stamp-down 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
 
-  .feedback-score.strong { color: var(--signal); }
-  .feedback-score.weak { color: var(--amber); }
+  @keyframes stamp-down {
+    0% { transform: rotate(-5deg) scale(1.6); opacity: 0; }
+    60% { transform: rotate(-7deg) scale(0.94); opacity: 1; }
+    100% { transform: rotate(-5deg) scale(1); opacity: 1; }
+  }
+
+  .feedback-score.strong { color: var(--brass); }
+  .feedback-score.weak { color: var(--flag); }
 
   .feedback-score-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--dim);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    line-height: 1.6;
   }
 
   .feedback-text {
     font-size: 14px;
     color: var(--dim);
-    line-height: 1.55;
+    line-height: 1.6;
   }
 
   /* ---------- Report screen ---------- */
   .report-header {
-    margin-bottom: 28px;
+    margin-bottom: 30px;
   }
 
   .report-title {
-    font-size: 22px;
+    font-family: 'Fraunces', serif;
     font-weight: 600;
+    font-size: 24px;
     margin-bottom: 8px;
   }
 
@@ -343,42 +428,48 @@
   }
 
   .section-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--dim);
     margin-bottom: 12px;
     margin-top: 28px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
   }
 
   .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .tag {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     padding: 7px 12px;
-    border-radius: 999px;
+    border-radius: var(--radius);
   }
 
   .tag.strength {
-    background: rgba(94, 234, 212, 0.08);
-    color: var(--signal);
-    border: 1px solid var(--signal-dim);
+    background: rgba(203, 158, 78, 0.09);
+    color: var(--brass);
+    border: 1px solid var(--brass-dim);
   }
 
+  .tag.strength::before { content: "✓ "; }
+
   .tag.weak {
-    background: rgba(242, 184, 75, 0.08);
-    color: var(--amber);
-    border: 1px solid var(--amber-dim);
+    background: rgba(183, 92, 66, 0.1);
+    color: var(--flag);
+    border: 1px solid var(--flag-dim);
   }
+
+  .tag.weak::before { content: "△ "; }
 
   .plan-list { list-style: none; }
 
   .plan-list li {
     display: flex;
-    gap: 12px;
-    padding: 10px 0;
+    gap: 14px;
+    padding: 11px 0;
     border-bottom: 1px solid var(--line);
     font-size: 14px;
     line-height: 1.5;
@@ -387,9 +478,11 @@
   .plan-list li:last-child { border-bottom: none; }
 
   .plan-num {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--signal);
-    font-size: 13px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--brass);
+    font-size: 15px;
     flex-shrink: 0;
   }
 
@@ -397,7 +490,7 @@
 
   /* ---------- Loading / error ---------- */
   .status-line {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     color: var(--dim);
     margin-top: 14px;
@@ -405,7 +498,7 @@
   }
 
   .status-line.visible { display: block; }
-  .status-line.error { color: var(--amber); }
+  .status-line.error { color: var(--flag); }
 
   .dot-pulse {
     display: inline-block;
@@ -416,14 +509,24 @@
     0%, 100% { opacity: 0.3; }
     50% { opacity: 1; }
   }
+
+  /* keyboard focus visibility */
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .chip:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
 </style>
 </head>
 <body>
 
 <div class="console">
   <div class="topbar">
-    <div class="wordmark">NEXUS<span>_</span></div>
-    <div class="topbar-meta" id="topbarMeta">interview console</div>
+    <div class="topbar-row">
+      <div class="wordmark">NEXUS<span class="mark"></span></div>
+      <div style="text-align:right;">
+        <div class="topbar-meta" id="topbarMeta">interview console</div>
+      </div>
+    </div>
   </div>
 
   <!-- AUTH SCREEN -->
@@ -431,7 +534,9 @@
     <div class="setup-title">Sign in</div>
     <div class="setup-sub">Your interviews and history are tied to your account.</div>
 
-    <button class="btn-primary" id="googleBtn" style="margin-bottom:16px;">Sign in with Google</button>
+    <button class="btn-primary" id="googleBtn">Sign in with Google</button>
+
+    <div class="divider-row"><div class="line"></div><span>or</span><div class="line"></div></div>
 
     <div class="field">
       <label for="authEmail">Email</label>
@@ -501,7 +606,7 @@
     <div class="feedback-card" id="feedbackCard" style="display:none;">
       <div class="feedback-score-row">
         <div class="feedback-score" id="feedbackScore">7/10</div>
-        <div class="feedback-score-label">score</div>
+        <div class="feedback-score-label">Examiner's<br>score</div>
       </div>
       <div class="feedback-text" id="feedbackText"></div>
       <div class="submit-row">
@@ -612,11 +717,19 @@
 
   function setWaveformScore(score) {
     const frac = Math.max(score, 1) / 10;
-    const color = score >= 6 ? 'var(--signal)' : 'var(--amber)';
+    const color = score >= 6 ? 'var(--brass)' : 'var(--flag)';
     el('waveform').querySelectorAll('.bar').forEach((bar, i) => {
       bar.style.height = Math.max(PATTERN[i] * frac * 100, 8) + '%';
       bar.style.background = color;
     });
+  }
+
+  // replay the stamp-down animation on every new score, not just the first
+  function replayStamp() {
+    const node = el('feedbackScore');
+    node.style.animation = 'none';
+    void node.offsetWidth; // force reflow
+    node.style.animation = '';
   }
 
   // ---- API calls ----
@@ -688,6 +801,7 @@
       el('feedbackScore').className = 'feedback-score ' + (data.last_score >= 6 ? 'strong' : 'weak');
       el('feedbackText').textContent = data.last_feedback;
       el('feedbackCard').style.display = 'block';
+      replayStamp();
 
       // stash the next question, revealed on "Next question"
       el('nextBtn').onclick = () => {
